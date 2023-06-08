@@ -11,6 +11,12 @@ class TrainOptions:
 		self.initialize()
 
 	def initialize(self):
+		self.parser.add_argument('--use_many_to_one_dataset',
+					default=False,
+					type = bool,
+					help = '')
+
+
 		self.parser.add_argument('--exp_dir', type=str, help='Path to experiment output directory')
 		self.parser.add_argument('--dataset_type', default='ffhq_encode', type=str, help='Type of dataset/experiment to run')
 		self.parser.add_argument('--encoder_type', default='GradualStyleEncoder', type=str, help='Which encoder to use')
@@ -52,6 +58,10 @@ class TrainOptions:
 		# arguments for super-resolution
 		self.parser.add_argument('--resize_factors', type=str, default=None, help='For super-res, comma-separated resize factors to use for inference.')
 
+		# arguments for using pretrained psp models:
+		self.parser.add_argument('--pretrained_psp_checkpoint_path', type = str, default = None, help = 'if specified, will load the specified pretrained psp prior to training.')
+
+
 	def parse(self):
 		opts = self.parser.parse_args()
 		return opts
@@ -89,7 +99,7 @@ class PreprocessOptions:
 
 		self.parser.add_argument('--label_nc', default=0, type=int, help='Number of input label channels to the psp encoder')
 		self.parser.add_argument('--input_nc', default=3, type=int, help='Number of input image channels to the psp encoder')
-		self.parser.add_argument('--label_nc', default=0, type=int, help='Number of input label channels to the psp encoder')
+		#self.parser.add_argument('--label_nc', default=0, type=int, help='Number of input label channels to the psp encoder')
 
 
 	def parse(self):
@@ -141,7 +151,6 @@ class PreprocessJesusOptions:
 							default=False,
 							type = bool,
 							help = 'whether to convert the original shroud image to B&W.')
-
 
 	def parse(self):
 		opts = self.parser.parse_args()

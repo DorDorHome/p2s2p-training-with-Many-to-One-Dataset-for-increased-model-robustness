@@ -7,12 +7,12 @@ dataset_paths = {
 	'celeba_train_segmentation': '',
 	'celeba_test_segmentation': '',
 	'ffhq': '/home/sfchan/Desktop/Models/collections of image generation model using GAN/stylegan2-pytorch-master/dataset/ffhq',
-	'shroud_train_source':  "/home/sfchan/Desktop/Datasets/faces/shroud/shroud_train/source/" ,
-	'shroud_train_target': "/home/sfchan/Desktop/Datasets/faces/shroud/shroud_train/target/",
-	'shroud_test_source':"/home/sfchan/Desktop/Datasets/faces/shroud/shroud_test/source/",
-	'shroud_test_target': "/home/sfchan/Desktop/Datasets/faces/shroud/shroud_test/target/",
-	'to_preprocess_train':'/media/sfchan/Expansion/Datasets/dataset_for_shroud_project/datasets/Celeb2Shroud/train/',
-	'to_preprocess_test':'/media/sfchan/Expansion/Datasets/dataset_for_shroud_project/datasets/Celeb2Shroud/test/test'
+	'shroud_train_source':  "/code/datasets/CelebAMask-HQ/artiticial_shroud_dataset" ,
+	'shroud_train_target': "/code/datasets/CelebAMask-HQ/CelebA-HQ-img",
+	'shroud_test_source':"/code/datasets/CelebAMask-HQ/artiticial_shroud_dataset",
+	'shroud_test_target': "/code/datasets/CelebAMask-HQ/CelebA-HQ-img",
+	'to_preprocess_train':'/code/pixel2style2pixel-master/path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/jesus_and_test_style_mix/style_mixing_1',
+	'to_preprocess_test':'/code/pixel2style2pixel-master/path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/jesus_and_test_style_mix/style_mixing_1'
 }
 
 model_paths = {

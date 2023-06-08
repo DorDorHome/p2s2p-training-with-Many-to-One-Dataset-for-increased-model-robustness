@@ -1,0 +1,447 @@
+environment to use:
+psp_env
+this environment was setup by starting with the stylegan3 envirnoment and installing new packages as required.
+
+
+folders I added:
+
+path_to_experiment # this contains the output of the models I have tried
+pretrained_models
+test_data
+
+# changed file:
+
+in coach, changed to be using second GPU: 
+from self.device = 'cuda:0' to self.device = 'cuda:1'
+
+in test_options.py, 
+added arguments --learning_rate for adjusting learning rate of 'fine_tune_stylegan_superresolution.py'
+
+
+# created files:
+# in scripts:
+psp_stylegan2_playground 
+stylegan2_playground #use stylegan2 directly, without using the p2s encoder
+
+
+
+Created p2p with identity:
+psp2.py (in progress)
+
+coach_p2p_with_2_input.py (in progress)
+
+fine_tune_stylegan_superresolution.py
+
+______________________________
+
+# align face, according to the ffhq method:
+
+python align_all_parallel.py \
+--num_threads=1 \
+--root_path=
+
+
+____________________________________
+# play with the pretrained stylegan2 model:
+
+stylegan2_playground.py 
+
+to run:
+python scripts/stylegan2_playground.py
+
+
+____________________________________
+# play with the pretrained psp model:
+
+
+python scripts/psp_stylegan2_playground.py \
+--exp_dir=path_to_experiment \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--resize_factors=32 \
+--couple_outputs
+
+____________________________________________________________________
+# play with transform and loss function,
+# checking the downsizing transform in tensor domain vs in image domain:
+
+python scripts/transform_and_loss_function_playground.py \
+--exp_dir=path_to_experiment \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--resize_factors=32 \
+--couple_outputs
+
+____________________________________________________________________
+# preprocessing for shroud image training set::
+# an helper function to process data was created
+# in the folder added_data_preprocessing_tools
+
+# to run:
+
+
+# please check the file before running! 
+# run on cpu only
+
+
+python split_image.py \
+--right_half_result=/code/pixel2style2pixel-master/data_folder/jesus_shroud \
+--left_half_result=/code/pixel2style2pixel-master/data_folder/jesus_shroud
+--
+
+python split_image.py \
+--right_half_result=/home/sfchan/Desktop/Datasets/faces/shroud/shroud_test/source \
+--left_half_result=/home/sfchan/Desktop/Datasets/faces/shroud/shroud_test/target
+
+____________________________________
+# preprocessing for the original shroud to make it match the training dataset:
+
+python added_data_preprocessing_tools/processing_shroud_for_inference.py \
+--original_shroud_input_folder=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_original/ \
+--transformed_shroud_output_folder=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_transformed/ \
+--Gaussian_blur_kernel_size=9 \
+--Gaussian_blur_sigma=1 \
+--denoise_amount=0 \
+--convert_to_BW=False
+
+
+
+
+
+________________________________
+# training for shroud image translation
+
+# edit fomr sketch_to_face:
+# python scripts/train.py \
+# --dataset_type=celebs_sketch_to_face \
+# --exp_dir=/path/to/experiment \
+# --workers=8 \
+# --batch_size=8 \
+# --test_batch_size=8 \
+# --test_workers=8 \
+# --val_interval=2500 \
+# --save_interval=5000 \
+# --encoder_type=GradualStyleEncoder \
+# --start_from_latent_avg \
+# --lpips_lambda=0.8 \
+# --l2_lambda=1 \python added_data_preprocessing_tools/rocessing_shroud_for_inference.py \
+--original_shroud_input_folder=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_original/ \
+--transformed_shroud_output_folder=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_transformed/ \
+--Gaussian_blur_kernel_size=12 \
+--Gaussian_blur_sigma=1 \
+
+python scripts/train.py \
+--dataset_type=shroud_to_image \
+--exp_dir=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5 \
+--workers=8 \
+--batch_size=4 \
+--test_batch_size=4 \
+--test_workers=8 \
+--val_interval=2500 \
+--save_interval=5000 \
+--encoder_type=GradualStyleEncoder \
+--start_from_latent_avg \
+--lpips_lambda=0.8 \
+--l2_lambda=0.3 \
+--id_lambda=0.5 \
+--w_norm_lambda=0.005 \
+
+# training with many to one dataset
+
+python scripts/train.py \
+--dataset_type=shroud_to_image \
+--use_many_to_one_dataset=True \
+--exp_dir=path_to_experiment/shroud_with_many_to_one \
+--workers=8 \
+--batch_size=4 \
+--test_batch_size=4 \
+--test_workers=8 \
+--val_interval=2500 \
+--save_interval=5000 \
+--encoder_type=GradualStyleEncoder \
+--start_from_latent_avg \
+--max_steps=1200000 \
+--lpips_lambda=0.8 \
+--l2_lambda=0.3 \
+--id_lambda=0.5 \
+--w_norm_lambda=0.005 \
+
+# training with many to one dataset, using pretrained psp checkpoint:
+python scripts/train.py \
+--dataset_type=shroud_to_image \
+--use_many_to_one_dataset=True \
+--exp_dir=path_to_experiment/shroud_with_many_to_one \
+--pretrained_psp_checkpoint_path=/code/pixel2style2pixel-master/path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/checkpoints//best_model.pt \
+--workers=8 \
+--batch_size=4 \
+--test_batch_size=4 \
+--test_workers=8 \
+--val_interval=2500 \
+--save_interval=5000 \
+--encoder_type=GradualStyleEncoder \
+--start_from_latent_avg \
+--max_steps=1200000 \
+--lpips_lambda=0.8 \
+--l2_lambda=0.3 \
+--id_lambda=0.5 \
+--w_norm_lambda=0.005 \
+
+________________________________
+# shroud translation inference:
+
+
+# inference.py has been corrupted. Please use inference_original.py instead:
+python scripts/inference.py \
+--exp_dir=path_to_experiment/shroud/jesus \
+--checkpoint_path=path_to_experiment/shroud/checkpoints/iteration_130000.pt \
+--data_path=/home/sfchan/Desktop/Datasets/faces/shroud/jesus/ \
+--test_batch_size=1 \
+--test_workers=4 \
+--couple_outputs
+
+# use this one
+
+python scripts/inference_original.py \
+--exp_dir=path_to_experiment/shroud/jesus \
+--checkpoint_path=path_to_experiment/shroud/checkpoints_nc_3/iteration_130000.pt \
+--data_path=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_transformed/ \
+--test_batch_size=1 \
+--test_workers=4 \
+--couple_outputs
+
+# for inference using shroud_lp_0.8_l2_0.3_id_0.5
+
+
+python scripts/inference_original.py \
+--exp_dir=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/jesus_and_test \
+--checkpoint_path=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/checkpoints/iteration_380000.pt \
+--data_path=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_transformed/ \
+--test_batch_size=1 \
+--test_workers=4 \
+--couple_outputs
+
+# style mixing with shroud_lp_0.8_l2_0.3_id_0.5:
+
+python scripts/style_mixing.py \
+--exp_dir=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/jesus_and_test_style_mix \
+--checkpoint_path=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/checkpoints/iteration_380000.pt \
+--data_path=/code/pixel2style2pixel-master/data_folder/jesus_shroud/jesus1.jpeg  \
+--test_batch_size=1 \
+--test_workers=4 \
+--n_images=25 \
+--n_outputs_to_generate=10 \
+--latent_mask=8,9,10,11,12,13,14,15,16,17
+
+# style mixing with shroud_lp_0.8_l2_0.3_id_0.5:
+# with separated results:
+
+python scripts/style_mixing.py \
+--exp_dir=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/jesus_and_test_style_mix \
+--checkpoint_path=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/checkpoints/iteration_380000.pt \
+--data_path=/home/sfchan/Desktop/Datasets/faces/shroud/jesus_transformed/  \
+--test_batch_size=1 \
+--test_workers=4 \
+--n_images=25 \
+--n_outputs_to_generate=10 \
+--latent_mask=8,9,10,11,12,13,14,15,16,17 \
+--separate_n_images=True
+
+
+# on the new many to one model:
+python scripts/inference_original.py \
+--exp_dir=/code/pixel2style2pixel-master/path_to_experiment/shroud_with_many_to_one/jesus_and_test \
+--checkpoint_path=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/checkpoints/best_model.pt \
+--data_path=/code/pixel2style2pixel-master/data_folder/jesus_shroud  \
+--test_batch_size=1 \
+--test_workers=4 \
+--n_images=25 \
+--n_outputs_to_generate=10 \
+--latent_mask=8,9,10,11,12,13,14,15,16,17
+
+
+# on the new many to one model, style mixing:
+
+python scripts/style_mixing.py \
+--exp_dir=/code/pixel2style2pixel-master/path_to_experiment/shroud_with_many_to_one/jesus_and_test_style_mix \
+--checkpoint_path=path_to_experiment/shroud_lp_0.8_l2_0.3_id_0.5/checkpoints/best_model.pt \
+--data_path=/code/pixel2style2pixel-master/data_folder/jesus_shroud  \
+--test_batch_size=1 \
+--test_workers=4 \
+--n_images=25 \
+--n_outputs_to_generate=10 \
+--latent_mask=8,9,10,11,12,13,14,15,16,17
+
+
+______________________________________
+
+
+
+______________________________
+Super-resolution with updates to the weights:
+# added by me, 
+# in progress! 
+
+# remember to set the learning rate in file before running
+# 32 times :
+python scripts/fine_tune_stylegan_superresolution.py \
+--exp_dir=path_to_experiment/superresolution_with_fine_tuning \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--resize_factors=32 \
+--learning_rate=0.003 \
+--n_epoch=1000 \
+--couple_outputs
+
+# 16 times:
+python scripts/fine_tune_stylegan_superresolution.py \
+--exp_dir=path_to_experiment/superresolution_with_fine_tuning \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--resize_factors=16 \
+--learning_rate=0.003 \
+--n_epoch=1000 \
+--couple_outputs
+____________________________________
+super resolution inference:
+straight from github repository:
+
+
+python scripts/inference.py \
+--exp_dir=path_to_experiment/superresolution \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--resize_factors=32 \
+--couple_outputs
+
+python scripts/inference.py \
+--exp_dir=path_to_experiment/superresolution \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--resize_factors=8 \
+--couple_outputs
+
+____________________________________________________________________
+Frontalization inference:
+
+# note: need to change the batch size to contain less than the number of pictures we have.
+
+python scripts/inference.py \
+--exp_dir=path_to_experiment/Frontalization \
+--checkpoint_path=pretrained_models/psp_ffhq_frontalization.pt \
+--data_path=data_folder/Frontalization_input_data \
+--test_batch_size=2 \
+--test_workers=4 \
+--couple_outputs
+
+
+
+
+
+
+
+
+
+____________________________________________________________________
+
+
+
+multi-modal synthesis:
+
+python scripts/style_mixing.py \
+--exp_dir=path_to_experiment \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--n_images=25 \
+--n_outputs_to_generate=5 \
+--resize_factors=32 \
+--latent_mask=8,9,10,11,12,13,14,15,16,17
+
+python scripts/style_mixing.py \
+--exp_dir=path_to_experiment \
+--checkpoint_path=pretrained_models/psp_celebs_super_resolution.pt \
+--data_path=data_folder/super_res_input_data \
+--test_batch_size=1 \
+--test_workers=4 \
+--n_outputs_to_generate=5 \
+--resize_factors=32 \
+--latent_mask=8,9,10,11,12,13,14,15,16,17
+
+
+____________________________________________________________________
+training for super resolution:
+
+python scripts/train.py \
+--dataset_type=celebs_super_resolution \
+--exp_dir=/path/to/experiment \
+--workers=8 \
+--batch_size=8 \
+--test_batch_size=8 \
+--test_workers=8 \
+--val_interval=2500 \
+--save_interval=5000 \
+--encoder_type=GradualStyleEncoder \
+--start_from_latent_avg \
+--lpips_lambda=0.8 \
+--l2_lambda=1 \
+--id_lambda=0.1 \
+--w_norm_lambda=0.005 \
+--resize_factors=1,2,4,8,16,32
+
+# adjust the batch_size down:
+# before training, please adjust the cuda id in the coach.py file.
+
+python scripts/train.py \
+--dataset_type=celebs_super_resolution \
+--exp_dir=path_to_experiment \
+--workers=8 \
+--batch_size=2 \
+--test_batch_size=2 \
+--test_workers=8 \
+--val_interval=2500 \
+--save_interval=5000 \
+--encoder_type=GradualStyleEncoder \
+--start_from_latent_avg \
+--lpips_lambda=0.8 \
+--l2_lambda=1 \
+--id_lambda=0.1 \
+--w_norm_lambda=0.005 \
+--resize_factors=1,2,4,8,16,32
+
+____________________________________________________________________
+Frontalization:
+
+Training:
+
+python scripts/train.py \
+--dataset_type=ffhq_frontalize \
+--exp_dir=/path/to/experiment \
+--workers=8 \
+--batch_size=8 \
+--test_batch_size=8 \
+--test_workers=8 \
+--val_interval=2500 \
+--save_interval=5000 \
+--encoder_type=GradualStyleEncoder \
+--start_from_latent_avg \
+--lpips_lambda=0.08 \
+--l2_lambda=0.001 \
+--lpips_lambda_crop=0.8 \
+--l2_lambda_crop=0.01 \
+--id_lambda=1 \
+--w_norm_lambda=0.005
+
+___

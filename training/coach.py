@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from utils import common, train_utils
 from criteria import id_loss, w_norm, moco_loss
 from configs import data_configs
-from datasets.images_dataset import ImagesDataset
+from datasets.images_dataset import ImagesDataset, ManyToOneDataset
 from criteria.lpips.lpips import LPIPS
 from models.psp import pSp
 from training.ranger import Ranger
@@ -34,8 +34,28 @@ class Coach:
 			from utils.wandb_utils import WBLogger
 			self.wb_logger = WBLogger(self.opts)
 
-		# Initialize network
+		# create directory for storing the results
+		os.makedirs(opts.exp_dir, exist_ok= True)
+
+		# create a subdirectory for specifying hyperparameters used:
+		opts.exp_dir = os.path.join(opts.exp_dir, f'lpips_{opts.lpips_lambda}_l2_{opts.l2_lambda}_id_{opts.id_lambda}_w_norm_{opts.w_norm_lambda}')
+		os.makedirs(opts.exp_dir, exist_ok= True)
+
+		# load the pretrained psp if the checkpoint is specified:
+		if self.opts.pretrained_psp_checkpoint_path is not None:
+			print(f'using pretrained psp from {self.opts.pretrained_psp_checkpoint_path}')
+			# setting the checkpoint_path in opts. 
+			# This is needed because p2p() will load the checkpoint according to the self.opts.checkpoint_path.
+			self.opts.checkpoint_path = self.opts.pretrained_psp_checkpoint_path
+			
+		
+
+		# Initialize network.
+		#  The self.opts, if containing the checkpoint_path, will load the corresponding ckpt for
+		# the psp model
 		self.net = pSp(self.opts).to(self.device)
+
+
 
 		# Estimate latent_avg via dense sampling if latent_avg is not available
 		if self.net.latent_avg is None:
@@ -208,21 +228,37 @@ class Coach:
 
 		# load the data. For details on the transform, see configs\transforms_configs.py: 
 		# The result is a subclass of Dataset, where __getitm__ gives a pair ( source_img, target_img):
-		train_dataset = ImagesDataset(source_root=dataset_args['train_source_root'],
-									  target_root=dataset_args['train_target_root'],
-									  source_transform=transforms_dict['transform_source'],
-									  target_transform=transforms_dict['transform_gt_train'],
-									  opts=self.opts)
-		test_dataset = ImagesDataset(source_root=dataset_args['test_source_root'],
-									 target_root=dataset_args['test_target_root'],
-									 source_transform=transforms_dict['transform_source'],
-									 target_transform=transforms_dict['transform_test'],
-									 opts=self.opts)
+		if self.opts.use_many_to_one_dataset:
+			train_dataset = ManyToOneDataset(source_root=dataset_args['train_source_root'],
+							target_root=dataset_args['train_target_root'],
+							source_transform=transforms_dict['transform_source'],
+							target_transform=transforms_dict['transform_gt_train'],
+							opts=self.opts)
+			test_dataset = ManyToOneDataset(source_root=dataset_args['test_source_root'],
+							target_root=dataset_args['test_target_root'],
+							source_transform=transforms_dict['transform_source'],
+							target_transform=transforms_dict['transform_test'],
+							opts=self.opts)
+		
+
+
+		
+		else:
+			train_dataset = ImagesDataset(source_root=dataset_args['train_source_root'],
+										target_root=dataset_args['train_target_root'],
+										source_transform=transforms_dict['transform_source'],
+										target_transform=transforms_dict['transform_gt_train'],
+										opts=self.opts)
+			test_dataset = ImagesDataset(source_root=dataset_args['test_source_root'],
+										target_root=dataset_args['test_target_root'],
+										source_transform=transforms_dict['transform_source'],
+										target_transform=transforms_dict['transform_test'],
+										opts=self.opts)
 		
 	# crosscheck train_dataset:
-		first_image_source, first_image_target = train_dataset[1000]
-		common.tensor2im(first_image_source).show()
-		common.tensor2im(first_image_target).show()
+		# first_image_source, first_image_target = train_dataset[1000]
+		# common.tensor2im(first_image_source).show()
+		# common.tensor2im(first_image_target).show()
 		
 		if self.opts.use_wandb:
 			self.wb_logger.log_dataset_wandb(train_dataset, dataset_name="Train")

@@ -79,44 +79,47 @@ print(type(train_dataset[0])) # .shape)
 
 print(train_dataset[0].shape)
 
+image_wide = train_dataset[0].shape[2]
+
 # show the source image:
 
 tensor2im(train_dataset[0]).show()
 
 # split the images:
 
-image_testL, image_testR = train_dataset[0][:,:,:512], train_dataset[0][:,:, 512:]
-tensor2im(image_testL).show()
+image_testL, image_testR = train_dataset[0][:,:,:(image_wide//2)], train_dataset[0][:,:, (image_wide//2):]
+#tensor2im(image_testL).show()
 #tensor2im(image_testR).show()
 
 # setup output path:
 
-# source_out_folder = opts.right_half_result
-# target_out_folder = opts.left_half_result
+source_out_folder = opts.right_half_result
+target_out_folder = opts.left_half_result
 
-# print('source folder: ',source_out_folder)
-# print('target folder: ', target_out_folder)
+print('source folder: ',source_out_folder)
+print('target folder: ', target_out_folder)
 
-# for i, image in enumerate(train_dataset):
+for i, image in enumerate(train_dataset):
     
-#     imageL, imageR = image[:,:,:512], image[:,:,512:]
-#     if i < 2:
-#         tensor2im(imageL).show()
-#     source_out_path = os.path.join(source_out_folder, f'{i}.png' )
-#     target_out_path = os.path.join(target_out_folder, f'{i}.png' )
-#     utils.save_image(
-#         imageR,
-#         source_out_path,
-#         nrow = 1, 
-#         normalize = True,
-#         range = (-1,1),
-#     )
-#     utils.save_image(
-#         imageL,
-#         target_out_path,
-#         nrow = 1, 
-#         normalize = True,
-#         range = (-1,1),zxx cv
+    imageL, imageR = image[:,:,:512], image[:,:,512:]
+    if i < 2:
+        tensor2im(imageL).show()
+    source_out_path = os.path.join(source_out_folder, f'{i}.png' )
+    target_out_path = os.path.join(target_out_folder, f'{i}.png' )
+    utils.save_image(
+        imageR,
+        source_out_path,
+        nrow = 1, 
+        normalize = True,
+        range = (-1,1),
+    )
+    utils.save_image(
+        imageL,
+        target_out_path,
+        nrow = 1, 
+        normalize = True,
+        range = (-1,1),
+    )
 
 
 
